@@ -1,0 +1,1 @@
+find . -name 'primes_made*' -exec wc -l {} + | head -n -1 | sort -nr | awk 'BEGIN { max = 0 } { count[NR] = $1; files[NR] = $2; if ($1 > max) max = $1 } END { for (i = 1; i <= NR; i++) printf "%-30s: %d lines (%.2f%%)\n", files[i], count[i], (count[i] / max) * 100 }'
