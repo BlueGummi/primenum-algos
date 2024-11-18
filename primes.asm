@@ -1,105 +1,77 @@
-section .bss
-digit resb 1
-
 section .data
-new_line db 10,13
+    primes_msg db 'Prime numbers:', 0xA, 0
+    format db '%d', 0xA, 0
+
+section .bss
+    prime_numbers resd 500
 
 section .text
-global _start
+    extern printf
+    global _start
+
 _start:
-   print_string "N = "
-   call read_number
-   mov ecx,eax
-   mov eax,1
-main_loop:
-   inc eax
-   cmp eax,ecx
-   jnl exit
-   mov ebx,2
-is_prime:
-   cmp eax,ebx ; haltura
-   je print_prime
-   push eax
-   xor edx,edx
-   div ebx
-   pop eax
-   test edx,edx
-   jz not_prime
-   inc ebx
-   jmp is_prime
+    push primes_msg
+    call printf
+    add esp, 4
+
+    mov ecx, 0
+    mov ebx, 2
+
+next_prime:
+    push ebx
+    call is_prime
+    add esp, 4
+    cmp eax, 1
+    jne not_prime
+    mov [prime_numbers + ecx*4], ebx
+
+    push ebx
+    push format
+    call printf
+    add esp, 8
+
+    inc ecx
+    cmp ecx, 500
+    jl next_number
+
 not_prime:
-   jmp main_loop
-print_prime:
-   push eax
-   call print_number
-   print_string " "
-   jmp main_loop
-exit:
-   mov eax,4
-   mov ebx,1
-   mov ecx,new_line
-   mov edx,2
-   int 80h
-   
-   syscall_exit 0
+next_number:
+    inc ebx
+    jmp next_prime
 
-read_number:
-   xor eax,eax
-   mov ebx,10
-   mov [digit],byte 0x30
+    mov eax, 1
+    xor ebx, ebx
+    int 0x80
 
-.read_digit:
-   mul ebx
-   add eax,[digit]
-   sub eax,0x30
-   call read_digit
-   cmp [digit],byte 0xA
-   jne .read_digit
-   ret
+is_prime:
+    cmp ebx, 2
+    jl not_prime_return
+    cmp ebx, 2
+    je prime_return
 
-read_digit:
-   pusha
+    test ebx, 1
+    jz not_prime_return
 
-   mov eax,3
-   mov ebx,0
-   mov ecx,digit
-   mov edx,1
-   int 80h
+    mov edi, 3
 
-   popa
-   ret
+check_loop:
+    mov eax, edi
+    mul edi
+    cmp eax, ebx
+    jg prime_return
+    mov edx, 0
+    mov eax, ebx
+    div edi
+    cmp edx, 0
+    je not_prime_return
 
-print_number:
-   mov eax,[esp + 4]
-   pusha
-   mov ebx,10
-   xor ecx,ecx
+    add edi, 2
+    jmp check_loop
 
-.push_digit:
-   xor edx,edx
-   div ebx
-   push dx
-   inc ecx
-   test eax,eax
-   jnz .push_digit
+prime_return:
+    mov eax, 1
+    ret
 
-.print_digit:
-   pop ax
-   call print_digit
-   loop .print_digit
-   popa
-   ret
-
-print_digit:
-   pusha
-   mov [digit],al
-   add [digit],byte 0x30
-
-   mov eax,4
-   mov ebx,1
-   mov ecx,digit
-   mov edx,1
-   int 80h
-
-   popa
-   ret
+not_prime_return:
+    xor eax, eax
+    ret
