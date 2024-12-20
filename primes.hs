@@ -1,5 +1,4 @@
 import Control.Monad (forever)
-import Control.Concurrent (threadDelay)
 
 isPrime :: Int -> Bool
 isPrime n

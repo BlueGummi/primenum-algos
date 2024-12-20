@@ -1,7 +1,19 @@
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::arch::x86_64::{_mm_load_sd, _mm_sqrt_sd, _mm_store_sd};
 
 static KEEP_RUNNING: AtomicBool = AtomicBool::new(true);
 
+fn sqrt(num: f64) -> f64 {
+    let mut result: f64 = 0.0;
+
+    unsafe {
+        let num_xmm = _mm_load_sd(&num);
+        let sqrt_xmm = _mm_sqrt_sd(_mm_load_sd(&result), num_xmm);
+        _mm_store_sd(&mut result, sqrt_xmm);
+    }
+
+    result
+}
 
 fn is_prime(num: i32) -> bool {
     if num <= 1 {
@@ -14,7 +26,7 @@ fn is_prime(num: i32) -> bool {
         return false;
     }
 
-    let limit = (num as f64).sqrt() as i32;
+    let limit = sqrt(num as f64) as i32;
     let mut i = 5;
     while i <= limit {
         if num % i == 0 || num % (i + 2) == 0 {
@@ -26,7 +38,6 @@ fn is_prime(num: i32) -> bool {
 }
 
 fn main() {
-
     let mut number = 2;
 
     while KEEP_RUNNING.load(Ordering::SeqCst) {
@@ -34,7 +45,5 @@ fn main() {
             println!("{}", number);
         }
         number += 1;
-
     }
-
 }
